@@ -405,7 +405,7 @@ if(runtime.configUrl){
   const res=await fetch(runtime.configUrl,{method:'GET',mode:'cors',credentials:'omit',cache:'no-store'});
   const data=await res.json();
   if(res.ok&&data&&data.ok&&data.config){
-   c={...c,...data.config,logoUrl:c.logoUrl,theme:{...c.theme,...(data.config.theme||{})},questions:Array.isArray(data.config.questions)?data.config.questions:c.questions};
+   c={...c,...data.config,logoUrl:data.config.logoUrl||c.logoUrl,theme:{...c.theme,...(data.config.theme||{})},questions:Array.isArray(data.config.questions)?data.config.questions:c.questions};
   }
  }catch(_){/* The embedded configuration remains a safe fallback. */}
 }
@@ -435,6 +435,7 @@ function makeId(){
  return [s.slice(0,8),s.slice(8,12),s.slice(12,16),s.slice(16,20),s.slice(20)].join('-');
 }
 const e=H.escape;
+function applyTextOverrides(root=document.body){if(!c.textOverrides)return;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);for(let n=walker.nextNode();n;n=walker.nextNode()){const raw=n.nodeValue,key=raw.trim();if(key&&Object.prototype.hasOwnProperty.call(c.textOverrides,key))n.nodeValue=raw.replace(key,c.textOverrides[key]);}}
 function message(s){const box=$('#global-error');box.textContent=s||'';box.hidden=!s;}
 function field(id,label,placeholder,attrs=''){
  return `<div class="field"><label for="${id}">${label}<span class="req">*</span></label><input id="${id}" name="${id}" class="control" value="${e(state.profile[id])}" placeholder="${e(placeholder)}" aria-describedby="err-${id}" ${attrs}><div class="field-error" id="err-${id}"></div></div>`;
@@ -502,6 +503,7 @@ function render(focus=false){
  $('.navigation').hidden=state.done;$('#next').disabled=state.busy;
  $('#next-label').textContent=state.returnToReview?'بازگشت به مرور':state.step===0?'شروع گفت‌وگو':state.step===total?'مرور پاسخ‌ها':state.step>total?'ثبت نهایی پاسخ‌ها':'سؤال بعدی';
  $('#back-area').innerHTML=state.step===0?'<span class="nav-note">با آرامش و دقت پاسخ دهید.</span>':'<button class="secondary" type="button" id="back">→ &nbsp; مرحله قبل</button>';
+ applyTextOverrides(document.body);
  if(focus){$('#screen-title')?.focus({preventScroll:true});window.scrollTo({top:0,behavior:'auto'});}
 }
 function showFields(fields){
