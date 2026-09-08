@@ -1,0 +1,419 @@
+{
+  "name": "Mofid Academy | Interview Admin + Dynamic Questions",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "hr-mofid-academy-hr-config",
+        "authentication": "none",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "https://mofid-academy-interview.github.io"
+        }
+      },
+      "id": "5af2e928-6866-41cc-ab1f-9cddc72c1300",
+      "name": "Public Config",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "a3f9744c-5ed2-4647-b073-e001fb7f3f95"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "interview_config",
+          "mode": "name"
+        },
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "main"
+            }
+          ]
+        }
+      },
+      "id": "808747f1-485e-4253-97cd-d8168ce8f334",
+      "name": "Read Public Config",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const row=$input.first().json; try{return [{json:{ok:true,config:JSON.parse(row.config_json)}}]}catch{return [{json:{ok:false,statusCode:500,message:'Config JSON is invalid'}}]}"
+      },
+      "id": "b55d7f5d-e362-438a-a3f1-000d571ac38d",
+      "name": "Public JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode || 200 }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://mofid-academy-interview.github.io"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "63a2df83-4a1a-4ca0-a95e-f859facfb990",
+      "name": "Send Public Config",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "hr-mofid-academy-hr-admin-config",
+        "authentication": "basicAuth",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "https://mofid-academy-interview.github.io"
+        }
+      },
+      "id": "a796f8e2-a812-4105-9f1f-8a2bca28c3b8",
+      "name": "Admin Read",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        240
+      ],
+      "webhookId": "55c3743e-8a9d-4fe3-ab1a-a8af9cbf2dbe"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "interview_config",
+          "mode": "name"
+        },
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "main"
+            }
+          ]
+        }
+      },
+      "id": "b58c7235-7d79-4e9a-a011-25f132c92855",
+      "name": "Read Admin Config",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        240,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const row=$input.first().json; try{return [{json:{ok:true,config:JSON.parse(row.config_json),updatedAt:row.updated_at||row.updatedAt}}]}catch{return [{json:{ok:false,statusCode:500,message:'Config JSON is invalid'}}]}"
+      },
+      "id": "1a901861-c2af-4df5-a98c-b1c2c53ae50a",
+      "name": "Admin JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode || 200 }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://mofid-academy-interview.github.io"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "98a275b9-9331-4c88-93b6-75382c0ac338",
+      "name": "Send Admin Config",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hr-mofid-academy-hr-admin-config",
+        "authentication": "basicAuth",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "https://mofid-academy-interview.github.io"
+        }
+      },
+      "id": "2f8329a3-609c-4799-a384-649f9eab866c",
+      "name": "Admin Save",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        480
+      ],
+      "webhookId": "5c3d22c1-e05f-4208-afb9-2d2d55b4d596"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body=$input.first().json.body||$input.first().json; const c=body.config; const types=new Set(['textarea','text','single','multiple','number']); if(!c||!Array.isArray(c.questions)||!c.questions.length) throw new Error('At least one question is required'); const ids=new Set(); c.questions.forEach((q,i)=>{if(!q.id||ids.has(q.id)) q.id='q'+String(i+1).padStart(2,'0')+'-'+Date.now().toString(36); ids.add(q.id); if(!types.has(q.type)||!String(q.title||'').trim()) throw new Error('Invalid question '+(i+1)); if(['single','multiple'].includes(q.type)&&(!Array.isArray(q.options)||q.options.length<2)) throw new Error('Question '+(i+1)+' needs at least two options')}); return [{json:{key:'main',config_json:JSON.stringify(c),updated_at:new Date().toISOString(),config:c}}];"
+      },
+      "id": "440179f7-fca9-49e9-aff9-2cb35b58c019",
+      "name": "Validate Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "interview_config",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "main"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "config_json": "={{ $json.config_json }}",
+            "updated_at": "={{ $json.updated_at }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "50f4e7de-ba61-4002-ab05-370c36cd2cc3",
+      "name": "Update Config Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        480,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const source=$('Validate Config').first().json; return [{json:{ok:true,config:source.config,updatedAt:source.updated_at}}]"
+      },
+      "id": "619df938-70fa-469c-929f-2f4ebdf09892",
+      "name": "Saved JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode || 200 }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://mofid-academy-interview.github.io"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      },
+      "id": "f220e3db-1765-4173-a2b5-fa8a4e229add",
+      "name": "Send Save Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        960,
+        480
+      ]
+    }
+  ],
+  "connections": {
+    "Public Config": {
+      "main": [
+        [
+          {
+            "node": "Read Public Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Public Config": {
+      "main": [
+        [
+          {
+            "node": "Public JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Public JSON": {
+      "main": [
+        [
+          {
+            "node": "Send Public Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin Read": {
+      "main": [
+        [
+          {
+            "node": "Read Admin Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Admin Config": {
+      "main": [
+        [
+          {
+            "node": "Admin JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin JSON": {
+      "main": [
+        [
+          {
+            "node": "Send Admin Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin Save": {
+      "main": [
+        [
+          {
+            "node": "Validate Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Config": {
+      "main": [
+        [
+          {
+            "node": "Update Config Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Config Row": {
+      "main": [
+        [
+          {
+            "node": "Saved JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Saved JSON": {
+      "main": [
+        [
+          {
+            "node": "Send Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "versionId": "34c4b206-57ce-4c2d-a8cf-12ee4fde7dda",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
