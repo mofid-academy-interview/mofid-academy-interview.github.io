@@ -426,7 +426,8 @@ if(c.logoUrl&&H.logoURL(c.logoUrl)){
 $('#brand').textContent=c.organization;$('#hero-title').textContent=c.heroTitle;$('#intro').textContent=c.intro;
 $('#question-count').textContent=fa(c.questions.length);$('#minutes').textContent=c.estimatedMinutes;
 $('#footer-title').textContent=c.title;$('#preview-banner').hidden=!runtime.preview;
-const state={step:0,profile:{firstName:'',lastName:'',mobile:'',email:'',age:''},answers:{},consent:false,honeypot:'',busy:false,done:false,started:Date.now(),submissionId:makeId(),returnToReview:false,receipt:''};
+// recruitment-v1
+const state={resume:null,resumeConsent:false,resumeLoading:false,step:0,profile:{firstName:'',lastName:'',mobile:'',email:'',age:''},answers:{},consent:false,honeypot:'',busy:false,done:false,started:Date.now(),submissionId:makeId(),returnToReview:false,receipt:''};
 function makeId(){
  const b=new Uint8Array(16);
  if(window.crypto&&window.crypto.getRandomValues)window.crypto.getRandomValues(b);else for(let i=0;i<16;i++)b[i]=Math.floor(Math.random()*256);
@@ -443,7 +444,7 @@ function field(id,label,placeholder,attrs=''){
 function save(){
  if(state.step===0){
   for(const k of ['firstName','lastName','mobile','email','age'])if($('#'+k))state.profile[k]=$('#'+k).value;
-  state.consent=$('#consent').checked;state.honeypot=$('#website').value;
+  state.consent=$('#consent').checked;if($('#resumeConsent'))state.resumeConsent=$('#resumeConsent').checked;state.honeypot=$('#website').value;
  }else if(state.step<=c.questions.length){
   const q=c.questions[state.step-1];
   if(q.type==='single')state.answers[q.id]=$('input[name="answer"]:checked')?.value||'';
@@ -462,10 +463,20 @@ function personal(){
  ${field('email','ایمیل','you@example.com','autocomplete="email" inputmode="email" type="email" dir="ltr" maxlength="254"')}
  ${c.collectAge?`<div class="field"><label for="age">سن ${c.ageRequired?'<span class="req">*</span>':'<small>(اختیاری)</small>'}</label><input id="age" name="age" class="control" value="${e(state.profile.age)}" placeholder="مثلاً: ۲۵" inputmode="numeric" maxlength="3" aria-describedby="err-age"><div id="err-age" class="field-error"></div></div><div class="age-note">اطلاعات شما برای بررسی درخواست همکاری دریافت می‌شود.</div>`:''}
  </div>
+ ${c.recruitment?.enabled?'<div class="review-card" style="margin-top:20px"><label for="resumeFile"><strong>رزومه شما <span class="req">*</span></strong></label><p class="lead" style="font-size:.9rem;margin:6px 0">PDF یا فایل متنی TXT، حداکثر ۴ مگابایت. فایل تا ثبت نهایی در همین صفحه می‌ماند.</p><input id="resumeFile" class="control" type="file" accept=".pdf,.txt,application/pdf,text/plain"><p id="resumeName" role="status" style="overflow-wrap:anywhere;font-size:.9rem">'+e(state.resumeLoading?'در حال خواندن فایل…':state.resume?.name||'فایلی انتخاب نشده است.')+'</p><label class="consent-box" for="resumeConsent"><input type="checkbox" id="resumeConsent" '+(state.resumeConsent?'checked':'')+'><span>با ذخیره رزومه و پاسخ‌ها برای بررسی درخواست همکاری و تحلیل آنها با هوش مصنوعی موافقم. تصمیم نهایی را تیم جذب می‌گیرد.</span></label></div>':''}
  <label class="consent-box" for="consent"><input id="consent" type="checkbox" ${state.consent?'checked':''} aria-describedby="err-consent"><span>${e(c.privacyText)}</span></label><div id="err-consent" class="field-error"></div>
  <div class="honey" aria-hidden="true"><label>Website<input id="website" name="website" tabindex="-1" autocomplete="off" value="${e(state.honeypot)}"></label></div>
  <p class="info-line"><span aria-hidden="true">○</span>تا ثبت نهایی، پاسخ‌ها فقط در همین صفحه هستند؛ صفحه را نبندید.</p>`;
 }
+document.addEventListener('change',async ev=>{
+ if(ev.target.id!=='resumeFile')return;
+ const file=ev.target.files?.[0];if(!file)return;
+ state.resume=null;state.resumeLoading=true;const box=$('#resumeName');if(box)box.textContent='در حال خواندن فایل…';
+ try{const ext=file.name.split('.').pop().toLowerCase();if(!['pdf','txt'].includes(ext)||!file.size||file.size>4194304)throw Error('یک فایل PDF یا TXT با حجم حداکثر ۴ مگابایت انتخاب کنید.');
+ const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(Error('خواندن فایل انجام نشد.'));r.readAsDataURL(file)});
+ state.resume={name:file.name,ext,data};if(box)box.textContent='فایل انتخاب‌شده: '+file.name;
+ }catch(e){if(box)box.textContent=e.message;ev.target.value='';}finally{state.resumeLoading=false;}
+});
 function question(q){
  const typeNames={textarea:'پاسخ تشریحی',text:'پاسخ کوتاه',single:'انتخاب یک گزینه',multiple:'انتخاب چند گزینه',number:'پاسخ عددی'};
  const val=state.answers[q.id]??(q.type==='multiple'?[]:'');
@@ -515,7 +526,14 @@ function showFields(fields){
  }
  if(first)first.focus();
 }
+function resumeReady(){
+ if(!c.recruitment?.enabled)return true;
+ if(state.resumeLoading){message('لطفاً تا خواندن فایل صبر کنید.');return false;}
+ if(!state.resume){message('رزومه را در بخش مشخصات انتخاب کنید.');return false;}
+ if(!state.resumeConsent){message('رضایت بررسی رزومه و مصاحبه را تأیید کنید.');return false;}return true;
+}
 function validateStep(){
+ if(state.step===0&&!resumeReady())return false;
  if(state.step===0){
   const result=H.profile(c,state.profile);const fields=result.errors;
   if(!state.consent)fields.consent='برای ادامه، کاربرد اطلاعات را تأیید کنید.';
@@ -537,6 +555,7 @@ function routeFields(fields){
 }
 async function submit(){
  if(state.busy||state.done)return;
+ if(!resumeReady())return;
  const payload={formId:c.formId,version:H.revision(c),submissionId:state.submissionId,profile:state.profile,answers:state.answers,consent:state.consent,honeypot:state.honeypot,elapsedSeconds:Math.round((Date.now()-state.started)/1000)};
  const local=H.submission(c,payload,'local-validation');
  if(!local.ok){routeFields(local.response.fields||{});message(local.response.message);return;}
@@ -550,7 +569,7 @@ async function submit(){
    if(!/^https?:\/\//i.test(url||''))throw new Error('نشانی ارسال در تنظیمات سامانه کامل نیست. با مسئول جذب تماس بگیرید.');
    const controller=new AbortController();timeout=setTimeout(()=>controller.abort(),45000);
    // A CORS-safelisted body works inside n8n's opaque-origin HTML iframe.
-   const body=new URLSearchParams();body.set('payload',JSON.stringify(payload));
+   const body=new URLSearchParams();body.set('payload',JSON.stringify(payload));if(c.recruitment?.enabled){body.set('resume',JSON.stringify(state.resume));body.set('resumeConsent',String(state.resumeConsent));}
    const res=await fetch(url,{method:'POST',body,mode:'cors',credentials:'omit',cache:'no-store',signal:controller.signal});
    const raw=await res.text();
    try{data=JSON.parse(raw);}catch(_){throw new Error('پاسخ معتبر از سرور دریافت نشد. پاسخ‌ها در همین صفحه باقی مانده‌اند؛ با مسئول جذب تماس بگیرید.');}
@@ -560,7 +579,7 @@ async function submit(){
    }
    if(typeof data.receipt!=='string'||!data.receipt)throw new Error('کد ثبت از سرور دریافت نشد؛ با مسئول جذب بررسی کنید.');
   }
-  state.receipt=data.receipt;state.done=true;render(true);
+  state.receipt=data.receipt;state.resume=null;state.done=true;render(true);
  }catch(err){
   message(err.name==='AbortError'?'ارتباط با سرور قطع یا طولانی شد. ثبت قطعی نیست؛ پاسخ‌ها را نگه دارید و پیش از ارسال مجدد با مسئول جذب بررسی کنید.':err instanceof TypeError?'ارتباط با سرور برقرار نشد. پاسخ‌ها در همین صفحه باقی مانده‌اند؛ اتصال و انتشار گردش‌کار را بررسی کنید.':err.message||'ارتباط با سرور برقرار نشد. پاسخ‌ها هنوز در همین صفحه هستند.');
  }finally{
@@ -582,7 +601,7 @@ document.addEventListener('click',ev=>{
  if(edit){state.step=Number(edit.dataset.edit);state.returnToReview=true;render(true);return;}
  if(ev.target.closest('#back')){save();state.returnToReview=false;state.step=Math.max(0,state.step-1);render(true);}
  if(ev.target.closest('#restart')){
-state.step=0;state.done=false;state.returnToReview=false;state.profile={firstName:'',lastName:'',mobile:'',email:'',age:''};state.answers={};state.consent=false;state.honeypot='';state.started=Date.now();state.submissionId=makeId();state.receipt='';render(true);
+state.resume=null;state.resumeConsent=false;state.resumeLoading=false;state.step=0;state.done=false;state.returnToReview=false;state.profile={firstName:'',lastName:'',mobile:'',email:'',age:''};state.answers={};state.consent=false;state.honeypot='';state.started=Date.now();state.submissionId=makeId();state.receipt='';render(true);
 }
 });
 document.addEventListener('input',ev=>{
